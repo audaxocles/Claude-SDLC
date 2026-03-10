@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDLC Process</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.5; }
+
+  .page { max-width: 780px; margin: 0 auto; padding: 40px 24px 60px; }
+  h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 32px; }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 2px; margin-bottom: 28px; border-bottom: 1px solid #334155; }
+  .tab {
+    padding: 8px 14px; font-size: 0.85rem; font-weight: 500; color: #94a3b8;
+    cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;
+    background: none; border-top: none; border-left: none; border-right: none; font-family: inherit;
+  }
+  .tab:hover { color: #e2e8f0; }
+  .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── Flow line ── */
+  .flow { position: relative; padding-left: 32px; }
+  .flow::before { content: ''; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: #334155; }
+
+  /* ── Stage row ── */
+  .stage { position: relative; margin-bottom: 4px; cursor: pointer; }
+  .stage::before {
+    content: ''; position: absolute; left: -25px; top: 12px; width: 12px; height: 12px;
+    border-radius: 50%; background: #334155; border: 2px solid #475569; transition: all 0.2s; z-index: 1;
+  }
+  .stage.open::before { background: #38bdf8; border-color: #38bdf8; }
+  .stage-header { display: flex; align-items: baseline; gap: 10px; padding: 8px 0; }
+  .stage-num { font-size: 0.7rem; font-weight: 600; color: #64748b; min-width: 14px; }
+  .stage-title { font-weight: 600; font-size: 0.95rem; }
+  .stage-oneliner { color: #94a3b8; font-size: 0.82rem; margin-left: auto; text-align: right; white-space: nowrap; }
+
+  /* ── Expandable detail ── */
+  .detail { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; margin-bottom: 2px; }
+  .stage.open .detail { max-height: 900px; }
+  .detail-inner {
+    background: #1e293b; border: 1px solid #334155; border-radius: 8px;
+    padding: 16px 18px; margin-bottom: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  }
+  @media (max-width: 540px) { .detail-inner { grid-template-columns: 1fr; } .stage-oneliner { display: none; } }
+  .col label { display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+  .col.inputs label   { color: #38bdf8; }
+  .col.who label      { color: #a78bfa; }
+  .col.trigger label  { color: #fbbf24; }
+  .col.outputs label  { color: #34d399; }
+  .col.meeting label  { color: #fb7185; }
+  .col p { font-size: 0.84rem; color: #cbd5e1; line-height: 1.55; }
+
+  .loop { text-align: center; color: #64748b; font-size: 0.8rem; padding: 12px 0 0; margin-left: -32px; }
+  .loop span { color: #94a3b8; }
+
+  /* ── Roles ── */
+  .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 540px) { .role-grid { grid-template-columns: 1fr; } }
+  .role-card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 14px 16px; }
+  .role-card h3 { font-size: 0.88rem; font-weight: 600; margin-bottom: 6px; }
+  .role-card p { font-size: 0.82rem; color: #94a3b8; line-height: 1.5; }
+  .role-card .stages-tag { margin-top: 8px; font-size: 0.72rem; color: #64748b; }
+
+  /* ── Meetings ── */
+  .meeting-list { display: flex; flex-direction: column; gap: 10px; }
+  .meeting-card {
+    background: #1e293b; border: 1px solid #334155; border-radius: 8px;
+    padding: 14px 16px; display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: start;
+  }
+  @media (max-width: 540px) { .meeting-card { grid-template-columns: 1fr; } }
+  .meeting-card .when { font-size: 0.78rem; font-weight: 600; color: #fbbf24; padding-top: 2px; }
+  .meeting-card h3 { font-size: 0.88rem; font-weight: 600; margin-bottom: 4px; }
+  .meeting-card p { font-size: 0.82rem; color: #94a3b8; line-height: 1.5; }
+  .meeting-card .attendees { font-size: 0.75rem; color: #64748b; margin-top: 6px; }
+
+  .section-note { color: #94a3b8; font-size: 0.85rem; margin-bottom: 18px; }
+
+  /* ── Diagram ── */
+  .diagram-wrap { overflow-x: auto; padding: 8px 0; }
+  .diagram-wrap svg { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>SDLC Process</h1>
+  <p class="subtitle">Idea to production support. Built with Claude Code.</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('flow')">Flow</button>
+    <button class="tab" onclick="showTab('stages')">Stages</button>
+    <button class="tab" onclick="showTab('roles')">Roles</button>
+    <button class="tab" onclick="showTab('meetings')">Meetings</button>
+  </div>
+
+  <!-- ══════════ FLOW DIAGRAM ══════════ -->
+  <div class="panel active" id="panel-flow">
+    <p class="section-note">Standard flow and failure/hotfix paths. Click any box to see stage details.</p>
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 720 680" width="720" fill="none" xmlns="http://www.w3.org/2000/svg" style="font-family:system-ui,sans-serif">
+        <!-- Boxes (clickable → opens stage detail) -->
+        <style>
+          .box-link { cursor: pointer; }
+          .box-link rect, .box-link polygon { transition: filter 0.2s; }
+          .box-link:hover rect, .box-link:hover polygon { filter: brightness(1.3); }
+        </style>
+        <g id="boxes">
+          <a class="box-link" onclick="goToStage(0)">
+            <rect x="260" y="10" width="200" height="36" rx="6" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+            <text x="360" y="33" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="600">1. Intake</text>
+          </a>
+
+          <a class="box-link" onclick="goToStage(1)">
+            <rect x="260" y="66" width="200" height="36" rx="6" fill="#1e293b" stroke="#a78bfa" stroke-width="1.5"/>
+            <text x="360" y="89" text-anchor="middle" fill="#a78bfa" font-size="13" font-weight="600">2. Refinement</text>
+          </a>
+
+          <!-- Decision diamond for Design -->
+          <a class="box-link" onclick="goToStage(2)">
+            <polygon points="360,122 430,152 360,182 290,152" fill="#1e293b" stroke="#fbbf24" stroke-width="1.5"/>
+            <text x="360" y="156" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="600">Design needed?</text>
+          </a>
+
+          <a class="box-link" onclick="goToStage(2)">
+            <rect x="260" y="200" width="200" height="36" rx="6" fill="#1e293b" stroke="#fbbf24" stroke-width="1.5"/>
+            <text x="360" y="223" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="600">3. Design</text>
+          </a>
+
+          <a class="box-link" onclick="goToStage(3)">
+            <rect x="260" y="256" width="200" height="36" rx="6" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+            <text x="360" y="279" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="600">4. Development</text>
+          </a>
+
+          <a class="box-link" onclick="goToStage(4)">
+            <rect x="260" y="312" width="200" height="36" rx="6" fill="#1e293b" stroke="#a78bfa" stroke-width="1.5"/>
+            <text x="360" y="335" text-anchor="middle" fill="#a78bfa" font-size="13" font-weight="600">5. Code Review</text>
+          </a>
+
+          <a class="box-link" onclick="goToStage(5)">
+            <rect x="260" y="368" width="200" height="36" rx="6" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+            <text x="360" y="391" text-anchor="middle" fill="#e2e8f0" font-size="13" font-weight="600">6. DEV Verification</text>
+          </a>
+
+          <a class="box-link" onclick="goToStage(6)">
+            <rect x="260" y="424" width="200" height="36" rx="6" fill="#1e293b" stroke="#34d399" stroke-width="1.5"/>
+            <text x="360" y="447" text-anchor="middle" fill="#34d399" font-size="13" font-weight="600">7. Testing &amp; QA</text>
+          </a>
+
+          <a class="box-link" onclick="goToStage(7)">
+            <rect x="260" y="480" width="200" height="36" rx="6" fill="#1e293b" stroke="#34d399" stroke-width="1.5"/>
+            <text x="360" y="503" text-anchor="middle" fill="#34d399" font-size="13" font-weight="600">8. UAT</text>
+          </a>
+
+          <a class="box-link" onclick="goToStage(8)">
+            <rect x="260" y="536" width="200" height="36" rx="6" fill="#1e293b" stroke="#fb7185" stroke-width="1.5"/>
+            <text x="360" y="559" text-anchor="middle" fill="#fb7185" font-size="13" font-weight="600">9. Deployment</text>
+          </a>
+
+          <a class="box-link" onclick="goToStage(9)">
+            <rect x="260" y="592" width="200" height="36" rx="6" fill="#1e293b" stroke="#fb7185" stroke-width="1.5"/>
+            <text x="360" y="615" text-anchor="middle" fill="#fb7185" font-size="13" font-weight="600">10. Production Support</text>
+          </a>
+        </g>
+
+        <!-- Happy path arrows -->
+        <g stroke="#475569" stroke-width="1.2" marker-end="url(#arrow)">
+          <line x1="360" y1="46" x2="360" y2="66"/>
+          <line x1="360" y1="102" x2="360" y2="122"/>
+          <!-- Yes from diamond -->
+          <line x1="360" y1="182" x2="360" y2="200"/>
+          <!-- Design to Dev -->
+          <line x1="360" y1="236" x2="360" y2="256"/>
+          <line x1="360" y1="292" x2="360" y2="312"/>
+          <line x1="360" y1="348" x2="360" y2="368"/>
+          <line x1="360" y1="404" x2="360" y2="424"/>
+          <line x1="360" y1="460" x2="360" y2="480"/>
+          <line x1="360" y1="516" x2="360" y2="536"/>
+          <line x1="360" y1="572" x2="360" y2="592"/>
+        </g>
+
+        <!-- Diamond labels -->
+        <text x="467" y="148" fill="#34d399" font-size="10">Yes / Integration</text>
+        <text x="195" y="148" fill="#94a3b8" font-size="10" text-anchor="end">No (S, simple)</text>
+
+        <!-- No path: skip Design, go to Dev -->
+        <g stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowGray)">
+          <path d="M290,152 L220,152 L220,274 L260,274"/>
+        </g>
+
+        <!-- Fail paths: QA/UAT back to Dev -->
+        <g stroke="#fb7185" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowRed)">
+          <!-- QA fail -->
+          <path d="M460,442 L530,442 L530,274 L460,274"/>
+          <!-- UAT fail -->
+          <path d="M460,498 L560,498 L560,274 L460,274"/>
+          <!-- Code Review reject -->
+          <path d="M460,330 L500,330 L500,274 L460,274"/>
+        </g>
+        <text x="535" y="360" fill="#fb7185" font-size="9">QA Fail</text>
+        <text x="565" y="390" fill="#fb7185" font-size="9">UAT Fail</text>
+        <text x="505" y="308" fill="#fb7185" font-size="9">Rejected</text>
+
+        <!-- Loop back: Prod Support to Intake -->
+        <g stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowGray)">
+          <path d="M260,610 L140,610 L140,28 L260,28"/>
+        </g>
+        <text x="130" y="320" fill="#94a3b8" font-size="9" text-anchor="middle" transform="rotate(-90,130,320)">Feedback → Intake</text>
+
+        <!-- Hotfix path: Prod Support to Dev -->
+        <g stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arrowAmber)">
+          <path d="M260,600 L180,600 L180,274 L260,274"/>
+        </g>
+        <text x="170" y="440" fill="#fbbf24" font-size="9" text-anchor="middle" transform="rotate(-90,170,440)">Hotfix → Dev (skip 1–3)</text>
+
+
+        <!-- Rollback from Deployment -->
+        <g stroke="#fb7185" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowRed)">
+          <path d="M460,554 L490,554 L490,610 L460,610"/>
+        </g>
+        <text x="497" y="586" fill="#fb7185" font-size="9">Rollback</text>
+
+
+
+        <!-- Arrow markers -->
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#475569"/></marker>
+          <marker id="arrowGray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#94a3b8"/></marker>
+          <marker id="arrowRed" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#fb7185"/></marker>
+          <marker id="arrowAmber" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#fbbf24"/></marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div style="margin-top:20px; padding:14px 16px; background:#1e293b; border:1px solid #334155; border-radius:8px;">
+      <p style="font-size:0.82rem; color:#94a3b8; line-height:1.6;">
+        <span style="color:#475569;">━━</span> Happy path &nbsp;
+        <span style="color:#fb7185;">╌╌</span> Fail/reject → back to Development (full cycle: Code Review → DEV → QA → UAT) &nbsp;
+        <span style="color:#fbbf24;">╌╌</span> Hotfix: Production → Development (skips Intake, Refinement, Design) &nbsp;
+        <span style="color:#94a3b8;">╌╌</span> Skip/loop
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════ STAGES ══════════ -->
+  <div class="panel" id="panel-stages">
+    <p class="section-note">Click any stage to expand. Acceptance criteria are locked at Refinement — edge cases discovered later become new work items.</p>
+    <div class="flow" id="flow"></div>
+  </div>
+
+  <div class="panel" id="panel-roles">
+    <p class="section-note">Who does what. Architect has final say on integration decisions.</p>
+    <div class="role-grid" id="roles"></div>
+  </div>
+
+  <div class="panel" id="panel-meetings">
+    <p class="section-note">Grooming serves both Intake triage and Refinement in one session.</p>
+    <div class="meeting-list" id="meetings"></div>
+  </div>
+</div>
+
+<script>
+/* ══════════════ STAGES ══════════════ */
+const S = [
+  { n:'1', t:'Intake', one:'Capture, triage, prioritise',
+    inputs:'Feature requests, bug reports, support data, stakeholder needs (external)',
+    who:'PM triages + prioritises. BA captures context.',
+    trigger:'New request or pain point identified',
+    outputs:'Backlog item: problem statement, priority, rough size (S/M/L)',
+    meeting:'Backlog grooming (Intake + Refinement in one session)'
+  },
+  { n:'2', t:'Refinement', one:'Analyse, specify, accept',
+    inputs:'Backlog item from Intake. Plus: user research (BA/UX), technical constraints — tech stack, schemas, APIs, infra limits, cross-team deps (Tech Lead), business objectives (PM/stakeholders)',
+    who:'BA: user stories + acceptance criteria. PM: confirms scope. Tech Lead: feasibility. QA: testability. Product Designer: wireframes if UI/UX. Architect: brought in if Tech Lead flags new integration (new DB, third-party service, new tech). DDL/DML flagged to Architect for awareness only.',
+    trigger:'Top of backlog at grooming, or urgent escalation',
+    outputs:'Refined work item: user stories, acceptance criteria (locked), success metrics, confirmed size (S/M/L), dependencies. If integration: Architect sign-off — must go through Design.',
+    meeting:'Backlog grooming or focused refinement session'
+  },
+  { n:'3', t:'Design (if needed)', one:'Define how to build it',
+    inputs:'Refined work item from Refinement. Plus: existing codebase and project conventions file (CLAUDE.md — defines coding standards and architecture rules for Claude Code). System Integration Register + Architect guidance if integrations involved.',
+    who:'Tech Lead drives. Developer prompts Claude Code for options. Product Designer: specs/assets. Architect: consulted on integrations (final say). BA: clarifies requirements.',
+    trigger:'Sized M/L, multi-system, new patterns, or new integration (mandatory if Architect engaged). S items with no integrations skip to Development.',
+    outputs:'Design doc (Confluence, linked from Jira). OpenAPI spec (YAML on Confluence — dev commits to repo at start of Stage 4). If integrations: System Integration Register updated by Architect.',
+    meeting:'Design review'
+  },
+  { n:'4', t:'Development', one:'Claude Code writes, dev guides',
+    inputs:'Refined work item from Refinement. If Design required: Confluence doc + OpenAPI spec (dev commits to repo as first step). Existing codebase and project conventions file (CLAUDE.md).',
+    who:'Developer prompts + steers Claude Code. Tech Lead unblocks, tracks work items. PM tracks user stories via standup/board.',
+    trigger:'Developer has capacity, pulls highest-priority item',
+    outputs:'Feature branch, unit tests, PR opened. All Claude Code output reviewed before commit.',
+    meeting:'Daily standup'
+  },
+  { n:'5', t:'Code Review', one:'Human reviews AI output',
+    inputs:'PR from Development. Acceptance criteria (Jira). Design doc + OpenAPI spec if applicable.',
+    who:'Peer reviewer: logic, edge cases, security, and AI-specific risks (hallucinated deps, outdated APIs, over-engineering, missing error handling). BA: requirement questions. Reject → back to Development.',
+    trigger:'PR opened + CI passes (unit tests auto-validated)',
+    outputs:'Approved + merged PR. CI/CD auto-deploys to DEV.',
+    meeting:'Daily standup (blockers)'
+  },
+  { n:'6', t:'DEV Verification', one:'Developer smoke tests',
+    inputs:'Merged code on DEV (auto-deployed via CI/CD). Unit tests already passed at PR stage.',
+    who:'Developer verifies feature in DEV. Tech Lead reviews if needed.',
+    trigger:'CI/CD auto-deploys to DEV after merge to main',
+    outputs:'DEV confirmed green. Developer requests QA promotion (via Jira status).',
+    meeting:'Daily standup'
+  },
+  { n:'7', t:'Testing & QA', one:'Formal QA verification',
+    inputs:'Dev-verified build in DEV. Acceptance criteria from Refinement. Regression suite (maintained + updated by QA each release).',
+    who:'QA: gatekeeper — approves promotion from DEV to QA/Test, verifies against acceptance criteria, runs regression. Claude Code: generates additional tests. BA: confirms business rules.',
+    trigger:'Developer requests promotion (Jira), QA approves and promotes to QA/Test',
+    outputs:'Pass → promote to UAT. Fail → back to Development (full cycle: 4→5→6→7).',
+    meeting:'Release readiness'
+  },
+  { n:'8', t:'UAT', one:'BA + stakeholders verify',
+    inputs:'QA-verified build promoted to UAT. User stories + acceptance criteria from Refinement.',
+    who:'BA validates business rules. Stakeholders verify expectations. PM coordinates.',
+    trigger:'QA passes all criteria + regression, promotes to UAT',
+    outputs:'Pass → BA/stakeholder sign-off, cleared for production. Fail → back to Development (full cycle: 4→5→6→7→8).',
+    meeting:'Release readiness'
+  },
+  { n:'9', t:'Deployment', one:'Ship to production',
+    inputs:'UAT-approved build. Deployment checklist (DevOps). Rollback plan (Dev/DevOps).',
+    who:'DevOps deploys. On-call monitors. PM: final go/no-go. If rollback needed → Production Support.',
+    trigger:'UAT sign-off, no open defects, PM approves',
+    outputs:'Production release, health checks green, release notes + docs updated, stakeholders notified.',
+    meeting:'Release readiness (go/no-go)'
+  },
+  { n:'10', t:'Production Support', one:'Monitor and learn',
+    inputs:'Live system from Deployment. Monitoring/alerting (DevOps). Feedback channels — tickets, analytics (Support/PM).',
+    who:'On-call responds. Claude Code assists debugging. BA logs new requirements. PM prioritises. Hotfixes → straight to Development (skip stages 1–3).',
+    trigger:'Alert, user report, scheduled health review, or rollback from Deployment',
+    outputs:'Incident resolution, post-mortem, new backlog items → Intake. Hotfixes → Development.',
+    meeting:'Retrospective + backlog grooming'
+  }
+];
+
+const flow = document.getElementById('flow');
+S.forEach((s, i) => {
+  const div = document.createElement('div');
+  div.className = 'stage';
+  div.innerHTML = `
+    <div class="stage-header">
+      <span class="stage-num">${s.n}</span>
+      <span class="stage-title">${s.t}</span>
+      <span class="stage-oneliner">${s.one}</span>
+    </div>
+    <div class="detail">
+      <div class="detail-inner">
+        <div class="col inputs"><label>Inputs</label><p>${s.inputs}</p></div>
+        <div class="col who"><label>Processed by</label><p>${s.who}</p></div>
+        <div class="col trigger"><label>Trigger</label><p>${s.trigger}</p></div>
+        <div class="col outputs"><label>Outputs</label><p>${s.outputs}</p></div>
+        <div class="col meeting" style="grid-column:1/-1"><label>Related meeting</label><p>${s.meeting}</p></div>
+      </div>
+    </div>`;
+  div.querySelector('.stage-header').onclick = () => div.classList.toggle('open');
+  flow.appendChild(div);
+});
+flow.insertAdjacentHTML('beforeend', '<div class="loop">&#x21bb; <span>Outputs feed back into Stage 1</span></div>');
+
+/* ══════════════ ROLES ══════════════ */
+const R = [
+  { title:'Project Manager (PM)', desc:'Owns priority, timeline, stakeholder comms, release decisions.', stages:'All stages — especially 1–2, 8–9' },
+  { title:'Business Analyst (BA)', desc:'User stories, acceptance criteria, business rules validation (UAT).', stages:'Stages 1–3, 5, 7–8, 10' },
+  { title:'Developer', desc:'Prompts + steers Claude Code. Reviews all AI output. Verifies in DEV, requests QA promotion.', stages:'Stages 3–6, 10' },
+  { title:'Tech Lead', desc:'Drives design, unblocks devs, reviews high-risk changes. Escalates to Architect for integrations.', stages:'Stages 2–6' },
+  { title:'Architect', desc:'Final say on integration decisions. Signs off at Refinement, consulted in Design. Notified of DDL/DML for awareness. Owns System Integration Register.', stages:'Stages 2–3 (integration-triggered)' },
+  { title:'Product Designer', desc:'Wireframes, prototypes, user flows. Refinement + Design, then hands off.', stages:'Stages 2–3' },
+  { title:'QA / Tester', desc:'Gatekeeper for QA/Test env. Verifies acceptance criteria, runs + maintains regression suite. Uses Claude Code for test generation.', stages:'Stages 2, 7' },
+  { title:'DevOps', desc:'CI/CD pipeline + all environments (DEV, QA/Test, UAT, Prod). Deploys, monitors.', stages:'Stages 4, 6–7, 9–10' },
+  { title:'Stakeholders', desc:'Business context, scope approval, UAT verification, demos.', stages:'Stages 1–2, 8–9' },
+  { title:'Claude Code', desc:'AI pair programmer. Code, tests, scaffolding, debugging. Always human-reviewed.', stages:'Stages 3–7, 10' }
+];
+
+const rolesEl = document.getElementById('roles');
+R.forEach(r => {
+  rolesEl.innerHTML += `
+    <div class="role-card">
+      <h3>${r.title}</h3>
+      <p>${r.desc}</p>
+      <div class="stages-tag">${r.stages}</div>
+    </div>`;
+});
+
+/* ══════════════ MEETINGS ══════════════ */
+const M = [
+  { when:'Daily, 15 min', title:'Standup', desc:'Board right to left. Blockers + near-done items only.', who:'PM, Developers, QA, Tech Lead' },
+  { when:'Weekly, 45 min', title:'Backlog Grooming & Refinement', desc:'Triage new intake + refine top of backlog. Items leave ready to pull. Serves both Stage 1 and Stage 2.', who:'PM, BA, Tech Lead, QA' },
+  { when:'Per feature, ~20 min', title:'Design Review', desc:'Tech Lead + developer present approach. BA confirms alignment. Architect attends if integrations involved.', who:'Tech Lead, Developer, BA, (Architect)' },
+  { when:'Pre-release', title:'Release Readiness', desc:'Single meeting covering QA results, UAT status, and go/no-go. Checklist + rollback confirmed.', who:'PM, QA, BA, DevOps, Tech Lead' },
+  { when:'Post-deployment', title:'Demo / Showcase', desc:'Show deployed work to stakeholders. Feedback → backlog.', who:'PM, BA, Developers, Stakeholders' },
+  { when:'Bi-weekly, 45 min', title:'Retrospective', desc:'Flow metrics (cycle time, throughput). Pick 1–2 improvements.', who:'Whole team' }
+];
+
+const meetEl = document.getElementById('meetings');
+M.forEach(m => {
+  meetEl.innerHTML += `
+    <div class="meeting-card">
+      <div class="when">${m.when}</div>
+      <div>
+        <h3>${m.title}</h3>
+        <p>${m.desc}</p>
+        <div class="attendees">${m.who}</div>
+      </div>
+    </div>`;
+});
+
+/* ══════════════ TAB SWITCHING ══════════════ */
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.tab[onclick="showTab('${id}')"]`).classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+}
+
+/* ══════════════ FLOW → STAGE LINK ══════════════ */
+function goToStage(index) {
+  showTab('stages');
+  // Close all stages, then open the target
+  document.querySelectorAll('#flow .stage').forEach(s => s.classList.remove('open'));
+  const target = document.querySelectorAll('#flow .stage')[index];
+  if (target) {
+    target.classList.add('open');
+    setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+  }
+}
+</script>
+</body>
+</html>
