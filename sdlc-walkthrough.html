@@ -368,7 +368,7 @@ const R = [
   { title:'Business Analyst (BA)', desc:'User stories, acceptance criteria, business rules validation (UAT).', stages:'Stages 1–3, 5, 7–8, 10' },
   { title:'Developer', desc:'Prompts + steers Claude Code. Reviews all AI output. Verifies in DEV, requests QA promotion.', stages:'Stages 3–6, 10' },
   { title:'Tech Lead', desc:'Drives design, unblocks devs, reviews high-risk changes. Escalates to Architect for integrations.', stages:'Stages 2–6' },
-  { title:'Architect', desc:'Final say on integration decisions. Signs off at Refinement, consulted in Design. Notified of DDL/DML for awareness. Owns System Integration Register.', stages:'Stages 2–3 (integration-triggered)' },
+  { title:'Architect', desc:'Final say on integration decisions. Signs off at Refinement, consulted in Design. Owns System Integration Register.', stages:'Stages 2–3 (integration-triggered)' },
   { title:'Product Designer', desc:'Wireframes, prototypes, user flows. Refinement + Design, then hands off.', stages:'Stages 2–3' },
   { title:'QA / Tester', desc:'Gatekeeper for QA/Test env. Verifies acceptance criteria, runs + maintains regression suite. Uses Claude Code for test generation.', stages:'Stages 2, 7' },
   { title:'DevOps', desc:'CI/CD pipeline + all environments (DEV, QA/Test, UAT, Prod). Deploys, monitors.', stages:'Stages 4, 6–7, 9–10' },
@@ -377,6 +377,10 @@ const R = [
 ];
 
 const rolesEl = document.getElementById('roles');
+rolesEl.innerHTML = `
+  <p style="margin:0 0 16px; font-size:0.82rem; color:#64748b; line-height:1.5;">
+    <strong style="color:#94a3b8;">Role stacking:</strong> Roles combine based on project size — Architect → Tech Lead → Developer, PM → BA. Responsibilities stay the same, headcount changes.
+  </p>`;
 R.forEach(r => {
   rolesEl.innerHTML += `
     <div class="role-card">
