@@ -54,6 +54,7 @@
   .col.trigger label  { color: #fbbf24; }
   .col.outputs label  { color: #34d399; }
   .col.meeting label  { color: #fb7185; }
+  .col.ai label       { color: #818cf8; }
   .col p { font-size: 0.84rem; color: #cbd5e1; line-height: 1.55; }
 
   .loop { text-align: center; color: #64748b; font-size: 0.8rem; padding: 12px 0 0; margin-left: -32px; }
@@ -271,70 +272,80 @@ const S = [
     who:'PM triages + prioritises. BA captures context.',
     trigger:'New request or pain point identified',
     outputs:'Backlog item: problem statement, priority, rough size (S/M/L)',
-    meeting:'Backlog grooming (Intake + Refinement in one session)'
+    meeting:'Backlog grooming (Intake + Refinement in one session)',
+    ai:'Auto-categorise + deduplicate incoming requests. Draft problem statements from support tickets. Suggest priority based on historical patterns.'
   },
   { n:'2', t:'Refinement', one:'Analyse, specify, accept',
     inputs:'Backlog item from Intake. Plus: user research (BA/UX), technical constraints — tech stack, schemas, APIs, infra limits, cross-team deps (Tech Lead), business objectives (PM/stakeholders)',
     who:'BA: user stories + acceptance criteria. PM: confirms scope. Tech Lead: feasibility. QA: testability. Product Designer: wireframes if UI/UX. Architect: brought in if Tech Lead flags new integration (new DB, third-party service, new internal service/system, new tech). BA flags PII, regulated data, third-party contracts, or licensing to Compliance/Legal and obtains sign-off before development begins.',
     trigger:'Top of backlog at grooming, or urgent escalation',
     outputs:'Refined work item: user stories, acceptance criteria (locked), success metrics, confirmed size (S/M/L), dependencies. If integration: Architect sign-off — must go through Design. If compliance/legal flagged: BA obtains sign-off.',
-    meeting:'Backlog grooming or focused refinement session'
+    meeting:'Backlog grooming or focused refinement session',
+    ai:'Draft user stories + acceptance criteria from problem statement. Suggest edge cases. Flag compliance triggers (PII, regulated data). Estimate size from historical similar items.'
   },
   { n:'3', t:'Design (if needed)', one:'Define how to build it',
     inputs:'Refined work item from Refinement. Plus: existing codebase and project conventions file (CLAUDE.md — defines coding standards and architecture rules for Claude Code). System Integration Register (pre-existing, Architect-owned) + Architect guidance if integrations involved.',
     who:'Tech Lead drives. Developer prompts Claude Code for options. Product Designer: specs/assets. Architect: consulted on integrations (final say). BA: clarifies requirements.',
     trigger:'Sized M/L, multi-system, new patterns, or new integration (mandatory if Architect engaged). S items with no integrations skip to Development.',
     outputs:'Design doc (Confluence, linked from Jira). OpenAPI spec (YAML on Confluence — dev commits to repo at start of Stage 4). If integrations: System Integration Register updated by Architect.',
-    meeting:'Design review'
+    meeting:'Design review',
+    ai:'Generate design doc scaffolds + OpenAPI specs from requirements. Suggest architectural patterns based on codebase. Identify potential integration conflicts.'
   },
   { n:'4', t:'Development', one:'Claude Code writes, dev guides',
     inputs:'Refined work item from Refinement. If Design required: Confluence doc + OpenAPI spec (dev commits to repo as first step). Existing codebase and project conventions file (CLAUDE.md).',
     who:'Developer prompts + steers Claude Code. Tech Lead unblocks, tracks work items. PM tracks user stories via standup/board.',
     trigger:'Developer has capacity, pulls highest-priority item',
     outputs:'Feature branch, unit tests, PR opened. All Claude Code output reviewed before commit.',
-    meeting:'Daily standup'
+    meeting:'Daily standup',
+    ai:'Claude Code: code generation, unit tests, scaffolding. Developer prompts, steers, and reviews all output.'
   },
   { n:'5', t:'Code Review', one:'Human reviews AI output',
     inputs:'PR from Development. Acceptance criteria (Jira). Design doc + OpenAPI spec if applicable.',
     who:'Peer reviewer: logic, edge cases, security, and AI-specific risks (hallucinated deps, outdated APIs, over-engineering, missing error handling). BA: requirement questions. Reject → back to Development.',
     trigger:'PR opened + CI passes (unit tests, SAST, dependency scanning, secret detection auto-validated)',
     outputs:'Approved + merged PR. CI/CD auto-deploys to DEV.',
-    meeting:'Daily standup (blockers)'
+    meeting:'Daily standup (blockers)',
+    ai:'AI-assisted review: detect hallucinated deps, style drift from CLAUDE.md, test coverage gaps. SAST + dependency scanning + secret detection automated in CI.'
   },
   { n:'6', t:'DEV Verification', one:'Developer smoke tests',
     inputs:'Merged code on DEV (auto-deployed via CI/CD). Unit tests already passed at PR stage.',
     who:'Developer verifies feature in DEV. Tech Lead reviews if needed.',
     trigger:'CI/CD auto-deploys to DEV after merge to main',
     outputs:'DEV confirmed green. Developer requests QA promotion (via Jira status).',
-    meeting:'Daily standup'
+    meeting:'Daily standup',
+    ai:'Auto-generate smoke tests from acceptance criteria. Run happy-path verification before human review.'
   },
   { n:'7', t:'Testing & QA', one:'Formal QA verification',
     inputs:'Dev-verified build in DEV. Acceptance criteria from Refinement. Regression suite (maintained + updated by QA each release).',
     who:'QA: gatekeeper — approves promotion from DEV to QA/Test, verifies against acceptance criteria, runs regression. Claude Code: generates additional tests. BA: confirms business rules.',
     trigger:'Developer requests promotion (Jira), QA approves and promotes to QA/Test',
     outputs:'Pass → promote to UAT. Fail → back to Development (full cycle: 4→5→6→7).',
-    meeting:'Release readiness'
+    meeting:'Release readiness',
+    ai:'Generate test cases from acceptance criteria. Maintain + expand regression suite. Visual regression testing. Suggest edge-case scenarios.'
   },
   { n:'8', t:'UAT', one:'BA + stakeholders verify',
     inputs:'QA-verified build promoted to UAT. User stories + acceptance criteria from Refinement.',
     who:'BA validates business rules. Stakeholders verify expectations. PM coordinates. DevOps prepares deployment + rollback plans.',
     trigger:'QA passes all criteria + regression, promotes to UAT',
     outputs:'Pass → BA/stakeholder sign-off, deployment + rollback plans ready, cleared for production. Fail → back to Development (full cycle: 4→5→6→7→8).',
-    meeting:'Release readiness'
+    meeting:'Release readiness',
+    ai:'Generate UAT test scripts from user stories. Summarise test results for stakeholders.'
   },
   { n:'9', t:'Deployment', one:'Ship to production',
     inputs:'UAT-approved build. Deployment checklist (DevOps). Rollback plan (Dev/DevOps).',
     who:'DevOps deploys. On-call monitors. PM: final go/no-go. If rollback needed → Production Support.',
     trigger:'UAT sign-off, no open defects, PM approves',
     outputs:'Production release, health checks green, release notes + docs updated, stakeholders notified.',
-    meeting:'Release readiness (go/no-go)'
+    meeting:'Release readiness (go/no-go)',
+    ai:'Generate deployment checklist from diff. Real-time anomaly detection post-deploy. Auto-draft release notes.'
   },
   { n:'10', t:'Production Support', one:'Monitor and learn',
     inputs:'Live system from Deployment. Monitoring/alerting (DevOps). Feedback channels — tickets, analytics (Support/PM).',
     who:'On-call responds. Claude Code assists debugging. BA logs new requirements. PM prioritises. Hotfixes → straight to Development (skip stages 1–3).',
     trigger:'Alert, user report, scheduled health review, or rollback from Deployment',
     outputs:'Incident resolution, post-mortem, new backlog items → Intake. Hotfixes → Development.',
-    meeting:'Retrospective + backlog grooming'
+    meeting:'Retrospective + backlog grooming',
+    ai:'Log analysis + incident triage. Root cause suggestions from error patterns. Draft post-mortems. Claude Code assists debugging.'
   }
 ];
 
@@ -355,6 +366,7 @@ S.forEach((s, i) => {
         <div class="col trigger"><label>Trigger</label><p>${s.trigger}</p></div>
         <div class="col outputs"><label>Outputs</label><p>${s.outputs}</p></div>
         <div class="col meeting" style="grid-column:1/-1"><label>Related meeting</label><p>${s.meeting}</p></div>
+        <div class="col ai" style="grid-column:1/-1"><label>AI automation</label><p>${s.ai}</p></div>
       </div>
     </div>`;
   div.querySelector('.stage-header').onclick = () => div.classList.toggle('open');
